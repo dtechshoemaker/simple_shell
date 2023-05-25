@@ -1,7 +1,7 @@
 #include "shell.h"
 
 /**
- * get_history_file - gets the history file
+ * get_history_file - gets the file from previous activities
  * @info: parameter struct
  *
  * Return: allocated string containg history file

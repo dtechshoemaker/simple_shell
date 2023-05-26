@@ -54,9 +54,9 @@ int write_history(info_t *info)
 }
 
 /**
- * read_history - reads history from file
+ * read_history - reads the history from file
  * @info: the parameter struct
- *
+ * NORAH AND PETER
  * Return: histcount on success, 0 otherwise
  */
 int read_history(info_t *info)
@@ -124,7 +124,7 @@ int build_history_list(info_t *info, char *buf, int linecount)
 }
 
 /**
- * renumber_history - renumbers the history linked list after changes
+ * re number_history - re numbers the history linked list after changes
  * @info: Structure containing potential arguments. Used to maintain
  *
  * Return: the new histcount

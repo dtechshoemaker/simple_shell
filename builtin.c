@@ -1,153 +1,97 @@
 #include "shell.h"
-/**
- * exit_bul - Exit Statue Shell
- * @cmd: Parsed Command
- * @input: User Input
- * @argv:Program Name
- * @c:Execute Count
- * Return: Void (Exit Statue)
- */
-void  exit_bul(char **cmd, char *input, char **argv, int c)
-{
-	int statue, i = 0;
 
-	if (cmd[1] == NULL)
+/**
+ * _myexit - exits the shell
+ * @info: Structure containing potential arguments. Used to maintain
+ *          constant function prototype.
+ *  Return: exits with a given exit status
+ *         (0) if info.argv[0] != "exit"
+ */
+int _myexit(info_t *info)
+{
+	int exitcheck;
+
+	if (info->argv[1])  /* If there is an exit arguement */
 	{
-		free(input);
-		free(cmd);
-		exit(EXIT_SUCCESS);
-	}
-	while (cmd[1][i])
-	{
-		if (_isalpha(cmd[1][i++]) != 0)
+		exitcheck = _erratoi(info->argv[1]);
+		if (exitcheck == -1)
 		{
-			_prerror(argv, c, cmd);
-			break;
+			info->status = 2;
+			print_error(info, "Illegal number: ");
+			_eputs(info->argv[1]);
+			_eputchar('\n');
+			return (1);
 		}
+		info->err_num = _erratoi(info->argv[1]);
+		return (-2);
+	}
+	info->err_num = -1;
+	return (-2);
+}
+
+/**
+ * _mycd - changes the current directory of the process
+ * @info: Structure containing potential arguments. Used to maintain
+ *          constant function prototype.
+ *  Return: Always 0
+ */
+int _mycd(info_t *info)
+{
+	char *s, *dir, buffer[1024];
+	int chdir_ret;
+
+	s = getcwd(buffer, 1024);
+	if (!s)
+		_puts("TODO: >>getcwd failure emsg here<<\n");
+	if (!info->argv[1])
+	{
+		dir = _getenv(info, "HOME=");
+		if (!dir)
+			chdir_ret = /* TODO: what should this be? */
+				chdir((dir = _getenv(info, "PWD=")) ? dir : "/");
 		else
-		{
-			statue = _atoi(cmd[1]);
-			free(input);
-			free(cmd);
-			exit(statue);
-		}
+			chdir_ret = chdir(dir);
 	}
-}
-
-
-/**
- * change_directory - Change Dirctory
- * @cmd: Parsed Command
- * @er: Statue Last Command Excuted
- * Return: 0 Succes 1 Failed (For Old Pwd Always 0 Case No Old PWD)
- */
-int change_dir(char **cmd, __attribute__((unused))int er)
-{
-	int value = -1;
-	char cwd[PATH_MAX];
-
-	if (cmd[1] == NULL)
-		value = chdir(getenv("HOME"));
-	else if (_strcmp(cmd[1], "-") == 0)
+	else if (_strcmp(info->argv[1], "-") == 0)
 	{
-		value = chdir(getenv("OLDPWD"));
+		if (!_getenv(info, "OLDPWD="))
+		{
+			_puts(s);
+			_putchar('\n');
+			return (1);
+		}
+		_puts(_getenv(info, "OLDPWD=")), _putchar('\n');
+		chdir_ret = /* TODO: what should this be? */
+			chdir((dir = _getenv(info, "OLDPWD=")) ? dir : "/");
 	}
 	else
-		value = chdir(cmd[1]);
-
-	if (value == -1)
+		chdir_ret = chdir(info->argv[1]);
+	if (chdir_ret == -1)
 	{
-		perror("hsh");
-		return (-1);
-	}
-	else if (value != -1)
-	{
-		getcwd(cwd, sizeof(cwd));
-		setenv("OLDPWD", getenv("PWD"), 1);
-		setenv("PWD", cwd, 1);
-	}
-	return (0);
-}
-/**
- * dis_env - Display Enviroment Variable
- * @cmd:Parsed Command
- * @er:Statue of Last command Executed
- * Return:Always 0
- */
-int dis_env(__attribute__((unused)) char **cmd, __attribute__((unused)) int er)
-{
-size_t i;
-	int len;
-
-	for (i = 0; environ[i] != NULL; i++)
-	{
-		len = _strlen(environ[i]);
-		write(1, environ[i], len);
-		write(STDOUT_FILENO, "\n", 1);
-	}
-	return (0);
-}
-/**
- * display_help - Displaying Help For Builtin
- * @cmd:Parsed Command
- * @er: Statue Of Last Command Executed
- * Return: 0 Succes -1 Fail
- */
-int display_help(char **cmd, __attribute__((unused))int er)
-{
-	int fd, fw, rd = 1;
-	char c;
-
-	fd = open(cmd[1], O_RDONLY);
-	if (fd < 0)
-	{
-		perror("Error");
-		return (0);
-	}
-	while (rd > 0)
-	{
-		rd = read(fd, &c, 1);
-		fw = write(STDOUT_FILENO, &c, rd);
-		if (fw < 0)
-		{
-			return (-1);
-		}
-	}
-	_putchar('\n');
-	return (0);
-}
-/**
- * echo_bul - Execute Echo Cases
- * @st:Statue Of Last Command Excuted
- * @cmd: Parsed Command
- * Return: Always 0 Or Execute Normal Echo
- */
-int echo_bul(char **cmd, int st)
-{
-	char *path;
-	unsigned int  pid = getppid();
-
-	if (_strncmp(cmd[1], "$?", 2) == 0)
-	{
-		print_number_in(st);
-		PRINTER("\n");
-	}
-	else if (_strncmp(cmd[1], "$$", 2) == 0)
-	{
-		print_number(pid);
-		PRINTER("\n");
-
-	}
-	else if (_strncmp(cmd[1], "$PATH", 5) == 0)
-	{
-		path = _getenv("PATH");
-		PRINTER(path);
-		PRINTER("\n");
-		free(path);
-
+		print_error(info, "can't cd to ");
+		_eputs(info->argv[1]), _eputchar('\n');
 	}
 	else
-		return (print_echo(cmd));
+	{
+		_setenv(info, "OLDPWD", _getenv(info, "PWD="));
+		_setenv(info, "PWD", getcwd(buffer, 1024));
+	}
+	return (0);
+}
 
-	return (1);
+/**
+ * _myhelp - changes the current directory of the process
+ * @info: Structure containing potential arguments. Used to maintain
+ *          constant function prototype.
+ *  Return: Always 0
+ */
+int _myhelp(info_t *info)
+{
+	char **arg_array;
+
+	arg_array = info->argv;
+	_puts("help call works. Function not yet implemented \n");
+	if (0)
+		_puts(*arg_array); /* temp att_unused workaround */
+	return (0);
 }
